@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'Notification.dart' show notification;
 import 'dart:io';
 import 'dart:async';
-import 'workManagerFactory.dart' show workManager;
+import 'package:app1/WorkManagerFactory.dart' show workManager;
 void main() {
   runApp(MyApp());
 }
@@ -37,6 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
           child: RaisedButton(
             child: Text ('Test Background process '),
             onPressed: (){
+              //notification.showNotification("Please", "hello :(");
               workManager.sayHello();
             },
           )

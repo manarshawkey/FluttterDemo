@@ -2,11 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:app1/Notification.dart' show notification;
 import 'dart:async';
-
-const taskName = 'showNotification';
-void callbackDispatcher(){
-  Workmanager.executeTask((taskName, inputData) {
-    notification.showNotification("inTitle", "inMessage");
+void callbackDispatcher() {
+  Workmanager.executeTask((taskName, inputData) async {
+    await notification.showNotification("inTitle", "inMessage");
     return Future.value(true);
   });
 }
@@ -21,7 +19,7 @@ class WorkManagerFactory{
     Workmanager.initialize(callbackDispatcher, isInDebugMode: true);
     Workmanager.registerPeriodicTask(
         '1',
-        taskName,
+        "periodicBackgroundTask",
       frequency: Duration(minutes: 15),
       initialDelay: Duration(seconds: 5)
     );
