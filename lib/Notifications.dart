@@ -2,17 +2,22 @@
 import 'package:app1/DBWorker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
-import 'dart:math';
 import 'dart:async';
 class Notifications {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
-  var dbWorker = DBWorker();
-  Notifications._(){
-    print("Notifications::Notifications._()");
+  static final Notifications notifications = Notifications._internal();
+  factory Notifications(){
+    print('Notifications::Notifications()');
+    return notifications;
+  }
+  Notifications._internal(){
+    print('Notifications::_internal()');
     _init();
   }
+ /* Notifications(){
+    print("Notifications::Notifications()");
+    _init();
+  }*/
   Future _init() async {
     print("Notifications::_init()");
     WidgetsFlutterBinding.ensureInitialized();
@@ -25,34 +30,35 @@ class Notifications {
         }
         );
   }
-  Future <void> fireMorningNotification() async {
+  Future fireMorningNotification() async {
     print("Notification::fireMorningNotification()");
-    Messages message = await dbWorker.getMorningMessage();
+    Messages message = await DBWorker.db.getMorningMessage();
     print(message.title + message.body);
     await _showNotification(message.title, message.body);
   }
   Future<void> fireNoonNotification() async {
     print('Notification::fireNoonNotification()');
-    Messages message = await dbWorker.getNoonMessage();
+    //DBWorker dbWorker = DBWorker();
+    Messages message = await DBWorker.db.getNoonMessage();
     await _showNotification(message.title, message.body);
   }
-  /*Future <void> fireAfternoonNotification() async {
-    message = await dbWorker.getAfternoonMessage();
-    message.type = 'afternoon';
+  Future <void> fireAfternoonNotification() async {
+    Messages message = await DBWorker.db.getAfternoonMessage();
+   // message.type = 'afternoon';
     await _showNotification(message.title, message.body);
   }
   Future<void> fireEveningNotification() async {
     print("firing a morning notification!");
-    message = await dbWorker.getEveningMessage();
-    message.type = 'evening';
+    Messages message = await DBWorker.db.getEveningMessage();
+    //message.type = 'evening';
     await _showNotification(message.title, message.body);
   }
   Future<void> fireLateNightNotification() async {
     print('Notification::fireLateNightNotification()');
-    message = await dbWorker.getLateNightMessage();
-    message.type = 'lateNight';
+    Messages message = await DBWorker.db.getLateNightMessage();
+   // message.type = 'lateNight';
     await _showNotification(message.title, message.body);
-  }*/
+  }
   //Future<void> fireNightNotification(){}
   //Future<void> fireWeekendNotification(){}
   //Future<void> fireSundayNotification(){}
@@ -83,4 +89,3 @@ class Notifications {
     print("poking Notification");
   }
 }
-var notification = Notifications._();

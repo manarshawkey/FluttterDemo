@@ -1,66 +1,32 @@
-import 'dart:io';
 import 'package:sqflite/sqflite.dart';
-import "package:path_provider/path_provider.dart";
 import 'package:path/path.dart';
-import 'package:synchronized/synchronized.dart';
-import 'package:async/async.dart';
-class DBFactory {
-  static final DBFactory _dbFactory = new DBFactory._internal();
-  DBFactory._internal();
-  static DBFactory get instance => _dbFactory;
+class DBWorker {
+  DBWorker._();
+  static final DBWorker db = new DBWorker._();
   static Database _database;
-  final _initDBMemoizer = AsyncMemoizer<Database>();
-  Future<Database> get database async {
-    if (_database != null)
-      return _database;
-    _database = await _initDBMemoizer.runOnce(() async {
-      return await _initDB();
-    });
+  Future<Database> get database async{
+    if(_database == null){
+      _database = await _initDB();
+    }
     return _database;
   }
-  Future<Database> _initDB() async {
+ Future<Database> _initDB() async {
+    print('DBWWorker::_initDB()');
     String databasePath = await getDatabasesPath();
     String databaseFilePath = join(databasePath, 'data.db');
-    return await openDatabase(databaseFilePath, version: 1);
+    return await openDatabase(databaseFilePath, version: 1,
+      onOpen: (Database inDB){print('DB managed to open!');},
+      onCreate: (Database inDB, int version) async {
+        print('DB is open successfully, not time to insert some data!');
+        _setUpMorningMessagesTable(inDB);
+        _setUpNoonMessagesTable(inDB);
+        _setUpAfternoonMessagesTable(inDB);
+        _setUpEveningMessagesTable(inDB);
+        _setUpLateNightMessagesTable(inDB);
+      }
+    );
   }
-}
-class Messages{
-  String title;
-  String body;
-}
-class DBWorker{
-  DBWorker(){
-    print('DBWorker::DBWorker()');
-    initWorker();}
-  var db;
-  void initWorker() async {
-    print('DBWorker::initWorker()');
-    var lock = new Lock();
-    lock.synchronized(() async {await initDB();});
-  }
-  Future initDB() async {
-    print('DBWorker::initDB()');
-    db = await DBFactory.instance.database;
-    setUpUserInfoTable();
-    setUpMorningMessagesTable();
-    setUpNoonMessagesTable();
-    setUpAfternoonMessagesTable();
-    setUpEveningMessagesTable();
-    setUpLateNightMessagesTable();
-  }
-  void setUpUserInfoTable() async {
-    print("DBWorker::setUpUserInfo()");
-    await db.transaction((txn) async {
-      txn.execute("CREATE TABLE IF NOT EXISTS userInfo ("
-          "id INTEGER PRIMARY KEY AUTOINCREMENT,"
-          "name Text);");
-    });
-    await db.transaction((txn) async {
-      txn.rawInsert('INSERT INTO userInfo (name) VALUES (?)', ['Manar']);
-    });
-
-  }
-  void setUpMorningMessagesTable() async {
+  _setUpMorningMessagesTable(Database db) async {
     print("DBWorker::setUpMorningMessages()");
     await db.transaction((txn) async {
       txn.execute(
@@ -71,16 +37,16 @@ class DBWorker{
               ");"
       );
     });
-    _insertMorningMessages();
+    _insertMorningMessages(db);
   }
-  void _insertMorningMessages() async {
+  _insertMorningMessages(Database db) async {
     await db.transaction((txn) async {
       txn.rawInsert('INSERT INTO morningMessages (title, body) VALUES (?, ?)',
           ['Good Morning ', 'Such a beautiful day! Do not forget to have a nice breakfast.']
       );
     });
   }
-  void setUpNoonMessagesTable() async {
+  _setUpNoonMessagesTable(Database db) async {
     print("DBWorker::setUpNoonMessagesTable()");
     await db.transaction((txn) async {
       txn.execute("CREATE TABLE IF NOT EXISTS noonMessages ("
@@ -90,9 +56,9 @@ class DBWorker{
           ");"
       );
     });
-    _insertNoonMessages();
+    _insertNoonMessages(db);
   }
-  void _insertNoonMessages() async {
+  _insertNoonMessages(Database db) async {
     await db.transaction((txn) async {
       txn.rawInsert('INSERT INTO noonMessages (title, body) VALUES (?, ?)',
           ['Hello there!',
@@ -100,7 +66,7 @@ class DBWorker{
       );
     });
   }
-  void setUpAfternoonMessagesTable() async {
+  _setUpAfternoonMessagesTable(Database db) async {
     print("DBWorker::setUpAfternoonMessagesTable()");
     await db.transaction((txn) async {
       txn.execute('CREATE TABLE IF NOT EXISTS afternoonMessages ('
@@ -110,9 +76,9 @@ class DBWorker{
           ');'
       );
     });
-    _insertAfternoonMessages();
+    _insertAfternoonMessages(db);
   }
-  void _insertAfternoonMessages() async{
+  _insertAfternoonMessages(Database db) async{
     await db.transaction((txn) async {
       txn.rawInsert('INSERT INTO afternoonMessages (title, body) VALUES (?, ?), (?, ?)',
         ['Good Afternoon ', 'Maybe it is a good time to check your email!',
@@ -120,7 +86,7 @@ class DBWorker{
       );
     });
   }
-  void setUpEveningMessagesTable() async {
+  _setUpEveningMessagesTable(Database db ) async {
     print("DBWorker::setUpEveningMessagesTable()");
     await db.transaction((txn) async {
       txn.execute('CREATE TABLE IF NOT EXISTS eveningMessages ('
@@ -129,16 +95,16 @@ class DBWorker{
           'body TEXT'
           ');');
     });
-   _insertEveningMessages();
+    _insertEveningMessages(db);
   }
-  void _insertEveningMessages() async {
+  _insertEveningMessages(Database db) async {
     db.transaction((txn) async {
       txn.rawInsert('INSERT INTO eveningMessages (title, body) VALUES (?, ?)',
           ['Good Evening ', 'A family dinner is an absolutely awesome idea :)']
       );
     });
   }
-  void setUpLateNightMessagesTable() async {
+  _setUpLateNightMessagesTable(Database db) async {
     print("DBWorker::setUpLateNightMessagesTable()");
     await db.transaction((txn) async {
       txn.execute('CREATE TABLE IF NOT EXISTS lateNightMessages ('
@@ -147,9 +113,9 @@ class DBWorker{
           'body TEXT'
           ');');
     });
-    _insertLateEveningMessages();
+    _insertLateEveningMessages(db);
   }
-  void _insertLateEveningMessages() async {
+  _insertLateEveningMessages(Database db) async {
     db.transaction((txn) async {
       txn.rawInsert('INSERT INTO lateNightMessages (title, body) VALUES (?, ?), (?, ?)',
           ['Good night ', 'You deserve 7-8 hours of uninterrupted sleep :)',
@@ -157,28 +123,34 @@ class DBWorker{
       );
     });
   }
+
   Future<Messages> getMorningMessage() async {
     print("DBWorker::getMorningMessage()");
+    final db = await database;
     var map = await db.query("morningMessages", where: "id = ?", whereArgs: [1]);
     return messageFromMap(map.first);
   }
   Future<Messages> getNoonMessage() async {
     print("DBWorker::getNoonMessage()");
+    final db = await database;
     var map = await db.query("noonMessages", where: "id = ?", whereArgs: [1]);
     return messageFromMap(map.first);
   }
   Future<Messages> getAfternoonMessage() async {
     print("DBWorker::getNoonMessage()");
+    final db = await database;
     var map = await db.query("afterNoonMessages", where: "id = ?", whereArgs: [1]);
     return messageFromMap(map.first);
   }
   Future<Messages> getEveningMessage() async {
     print("DBWorker::getEveningMessage()");
+    final db = await database;
     var map = await db.query("eveningMessages", where: "id = ?", whereArgs: [1]);
     return messageFromMap(map.first);
   }
   Future<Messages> getLateNightMessage() async {
     print("DBWorker::getNoonMessage()");
+    final db = await database;
     var map = await db.query("lateNightMessages", where: "id = ?", whereArgs: [1]);
     return messageFromMap(map.first);
   }
@@ -188,9 +160,8 @@ class DBWorker{
     msg.body = inMap["body"];
     return msg;
   }
-  Future<dynamic> test() async {
-    print("DBWorker::test()");
-    //return await getRandomMsg();
-    return null;
-  }
+}
+class Messages{
+  String title;
+  String body;
 }
